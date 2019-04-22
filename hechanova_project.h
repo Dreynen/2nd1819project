@@ -1,3 +1,5 @@
+#include "prototypes.h"
+
 typedef struct Date
 {
 	int mm;
@@ -43,8 +45,6 @@ typedef struct Flight
 	struct Flight *prev;
 }
 Flight;
-
-#include "prototypes.h"
 
 int switchboard(Flight ** flights, Passenger ** passengers, int *flight_count, int *passenger_count)
 {
