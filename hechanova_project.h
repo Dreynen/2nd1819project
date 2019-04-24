@@ -631,6 +631,8 @@ void add_passenger(Passenger **passengers, int *passenger_count)
 		new -> first = NULL;
 		new -> next = NULL;
 		add_passenger_node(passengers, new);
+
+		printf("\nPassenger added successfully.\n\n");
 		(*passenger_count)++;
 	}
 	else
@@ -719,7 +721,7 @@ void add_passenger_head(Passenger **passengers, Passenger *new)
 	new -> next = *passengers;
 	new -> prev = NULL;
 	*passengers = new;
-	if(!(new -> next))
+	if(new -> next)
 	{
 		new -> next -> prev = new;
 	}
