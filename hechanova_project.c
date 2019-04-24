@@ -37,7 +37,5 @@ int main(void)
 	spam user prompts? maybe latur
 	use flight IDs and passport numbers as keys
 	study doubly linked lists
-
-	OMEGALUL
 */
 
