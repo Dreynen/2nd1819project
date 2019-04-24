@@ -81,9 +81,9 @@ int switchboard(Flight ** flights, Passenger ** passengers, int *flight_count, i
 		case 4:
 			del_flight(flights, flight_count);
 			break;
-// 		case 5:
-// 			add_passenger(passengers, passenger_count);
-// 			break;
+		case 5:
+			add_passenger(passengers, passenger_count);
+			break;
 // 		case 6:
 // 			edit_passenger(passengers);
 // 			break;
