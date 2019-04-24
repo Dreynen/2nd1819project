@@ -32,10 +32,17 @@ int main(void)
 	check if same date departure and arrival date
 	if same, no need to validate departure and arrival time
 	validate departure and arrival between two flights
-	if same day, validate time
-	else check both before and after; must be valid for only before OR after // XOR ganon?
-	spam user prompts? maybe latur
+		if same day, compare time
+			departure must come after arrival
+			or arrival must come before departure
+			(before or after)
+		else, compare date
+			departure must come after arrival
+			or arrival must come before departure
+			(before or after pa rin)
 	use flight IDs and passport numbers as keys
-	study doubly linked lists
+	how to properly reference flights from passenger??
+	spam user prompts? maybe later
+
 */
 
