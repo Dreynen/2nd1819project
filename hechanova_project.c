@@ -29,13 +29,16 @@ int main(void)
 /*
 	more structured user input methods
 	validate date and time
-	check if same date departure and arrival date
-	if same, no need to validate departure and arrival time
+	if flight has same departure and arrival date, validate times.
 	validate departure and arrival between two flights
-	if same day, validate time
-	else check both before and after; must be valid for only before OR after // XOR ganon?
-	spam user prompts? maybe latur
+		if same day, validate time
+			departure time after arrival time or arrival time before departure time
+		else, compare date
+			departure date after arrival date or arrival date before departure date
+	how to keep things sorted even after editing????
 	use flight IDs and passport numbers as keys
-	study doubly linked lists
+	how to properly cross-reference flights and passengers??
+	spam user prompts? maybe later
+
 */
 
