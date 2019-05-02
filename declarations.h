@@ -21,6 +21,11 @@ int check_dates(Date, Date);
 void get_times(Flight *, char *, char *);
 int check_times(Time, Time);
 Flight *found_flight(Flight *, int);
+int compare_names(char *, char *);
+void capitalize(char *);
+Flight *flightcpy(Flight *);
+Passenger *found_passenger(Passenger *, int);
+void get_names(Passenger *, char *, char *);
 
 void RunApplication();
 void menu_out();
@@ -30,5 +35,9 @@ void add_flight_node(Flight **, Flight *);
 void edit_flight(Flight **);
 void view(Flight *);
 void view_flight(Flight *);
+void del_flight(Flight **, int*);
 void del_flight_node(Flight **, Flight *);
+void add_passenger(Passenger **, int *);
+void add_passenger_node(Passenger **, Passenger *);
+void edit_passenger(Passenger **);
 

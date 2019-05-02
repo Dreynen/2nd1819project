@@ -165,10 +165,14 @@ int valid_time(Time new)
 
 void get_locations(Flight *flight, char *prompt0, char *prompt1)
 {
-	printf("%s", prompt0);
-	scanf("%s", flight -> destination);
-	printf("%s", prompt1);
-	scanf("%s", flight -> origin);
+	do
+	{
+		printf("%s", prompt0);
+		scanf("%s", flight -> destination);
+		printf("%s", prompt1);
+		scanf("%s", flight -> origin);
+	}
+	while(compare_names(flight -> destination, flight -> origin) == 0);
 }
 
 void get_dates(Flight *flight, char *prompt0, char *prompt1)
@@ -237,6 +241,10 @@ int check_times(Time time0, Time time1)
 		{
 			if(time0.mm >= time1.mm)
 			{
+				if(time0.mm == time1.mm)
+				{
+					return -1;
+				}
 				return 1;
 			}
 			return 0;
@@ -259,6 +267,28 @@ Flight *found_flight(Flight *flights, int ID)
 	return NULL;
 }
 
+int compare_names(char *s, char *t)
+//	strcmp capitalized copies of s and t
+{
+	char namecpy0[30];
+	char namecpy1[30];
+	strcpy(namecpy0, s);
+	strcpy(namecpy1, t);
+	capitalize(namecpy0);
+	capitalize(namecpy1);
+
+	return strcmp(namecpy0, namecpy1);
+}
+
+void capitalize(char *s)
+/* replaces string s with a capitalized string */
+{
+	for(int i = 0, n = strlen(s); i < n; i++)
+	{
+		s[i] = toupper(s[i]);
+	}
+}
+
 Flight *flightcpy(Flight *flight)
 {
 	Flight *new = malloc(sizeof(Flight));
@@ -276,4 +306,24 @@ Flight *flightcpy(Flight *flight)
 	new -> next = NULL;
 
 	return new;
+}
+
+Passenger *found_passenger(Passenger *passengers, int ID)
+{
+	for(Passenger *passenger = passengers; passenger; passenger = passenger -> next)
+	{
+		if((passenger -> ID) == ID)
+		{
+			return passenger;
+		}
+	}
+	return NULL;
+}
+
+void get_names(Passenger *passenger, char *prompt0, char *prompt1)
+{
+	printf("%s", prompt0);
+	scanf("%s", passenger -> firstname);
+	printf("%s", prompt1);
+	scanf("%s", passenger -> lastname);
 }

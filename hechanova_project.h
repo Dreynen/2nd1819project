@@ -52,6 +52,9 @@ int switchboard(Flight **flights, Passenger **passengers, int *flight_count, int
 		case 4:
 			del_flight(flights, flight_count);
 			break;
+		case 5:
+			add_passenger(passengers, passenger_count);
+			break;
 		case 10:
 			break;
 		default:
@@ -91,7 +94,11 @@ void add_flight(Flight **flights, int *flight_count)
 
 void add_flight_node(Flight **flights, Flight *new)
 {
-	if(!(*flights) || (check_dates((*flights) -> departure_date, new -> departure_date) == -1 && check_times((*flights) -> departure_time, new -> departure_time)) || check_dates((*flights) -> departure_date, new -> departure_date))
+	if(!(*flights)
+		|| check_dates((*flights) -> departure_date, new -> departure_date) == 1
+		|| (check_dates((*flights) -> departure_date, new -> departure_date) == -1 && check_times((*flights) -> departure_time, new -> departure_time) == 1)
+		|| (check_dates((*flights) -> departure_date, new -> departure_date) == -1 && check_times((*flights) -> departure_time, new -> departure_time) == -1 && compare_names((*flights) -> origin, new -> origin) > 0)
+		|| (check_dates((*flights) -> departure_date, new -> departure_date) == -1 && check_times((*flights) -> departure_time, new -> departure_time) == -1 && compare_names((*flights) -> origin, new -> origin) == 0 && compare_names((*flights) -> destination, new -> destination) >= 0))
 	//	if flight list is NULL or new node comes before head node
 	{
 		new -> next = *flights;
@@ -101,42 +108,31 @@ void add_flight_node(Flight **flights, Flight *new)
 	{
 		Flight *temp = *flights;
 		while(temp)
+		//	gets node before which new node should be placed; terminates with NULL if to be placed at tail
 		{
-			if((check_dates(new -> departure_date, temp -> departure_date) == -1 && check_times(new -> departure_time, temp -> departure_time)) || check_dates(new -> departure_date, temp -> departure_date))
+			if(check_dates(new -> departure_date, temp -> departure_date) == 1
+				|| (check_dates(new -> departure_date, temp -> departure_date) == -1 && check_times(new -> departure_time, temp -> departure_time) == 1)
+				|| (check_dates(new -> departure_date, temp -> departure_date) == -1 && check_times(new -> departure_time, temp -> departure_time) == -1 && compare_names(new -> origin, temp -> origin) > 0)
+				|| (check_dates(new -> departure_date, temp -> departure_date) == -1 && check_times(new -> departure_time, temp -> departure_time) == -1 && compare_names(new -> origin, temp -> origin) == 0 && compare_names(new -> destination, temp -> destination) >= 0))
 			{
 				temp = temp -> next;
-				continue;
 			}
-
-			break;
-		}
-
-
-		if(temp)
-		//	if temp is not NULL, place new node before temp
-		{
-			for(Flight *prev = *flights; prev; prev = prev -> next)
-			//	get node before temp
+			else
 			{
-				if(prev -> next == temp)
-				{
-					prev -> next = new;
-					new -> next = temp;
-				}
+				break;
 			}
 		}
-		else
-		//	place node at end of list
+
+		for(Flight *prev = *flights; prev; prev = prev -> next)
+		//	get node before temp
 		{
-			for(Flight *flight = *flights; flight; flight = flight -> next)
+			if(prev -> next == temp)
 			{
-				if(!(flight -> next))
-				{
-					flight -> next = new;
-					break;
-				}
+				prev -> next = new;
+				new -> next = temp;
 			}
 		}
+
 	}
 }
 
@@ -277,12 +273,45 @@ void view(Flight *flights)
 	}
 }
 
-void del_flight(Flight **flights)
+void del_flight(Flight **flights, int *flight_count)
 {
 	if(*flights)
 	{
-		printf("\nDELETE A FLIGHT\n\n");
-		printf("")
+		printf("\nDELETE A FLIGHT\n");
+
+		int ID = get_int("Enter Flight ID: ");
+		Flight *flight = found_flight(*flights, ID);
+		if(flight)
+		{
+			if(!(flight -> first))
+			//	if flight passenger list is NULL
+			{
+				printf("Confirm [Y/N]: ");
+				getchar();	//	get \n from last input
+				char choice = getchar();
+				if(choice == 'Y' || choice == 'y')
+				{
+					del_flight_node(flights, flight);
+
+					printf("\nFlight deleted successfully.\n\n");
+					(*flight_count)--;
+				}
+				else
+				{
+					printf("\nFlight not deleted.\n\n");
+				}
+			}
+
+
+			else
+			{
+				printf("\nError: Flight still has reserved passengers.\n\n");
+			}
+		}
+		else
+		{
+			printf("\nError: Flight not found.\n\n");
+		}
 	}
 }
 
@@ -291,19 +320,83 @@ void del_flight_node(Flight **flights, Flight *to_delete)
 	if(*flights == to_delete)
 	//	if node to be deleted is head
 	{
-		Flight *temp = *flights;
-		*flights = temp -> next;
+		*flights = to_delete -> next;
 		free(to_delete);
 	}
 	else
 	{
 		for(Flight *prev = *flights; prev; prev = prev -> next)
+		//	get node before node to be deleted
 		{
 			if(prev -> next == to_delete)
 			{
 				prev -> next = to_delete -> next;
 				free(to_delete);
 				break;
+			}
+		}
+	}
+}
+
+void add_passenger(Passenger **passengers, int *passenger_count)
+{
+	printf("\nADD A PASSENGER\n");
+	int ID = get_int("Enter Passport Number: ");
+	if(!found_passenger(*passengers, ID))
+	{
+		Passenger *new = malloc(sizeof(Passenger));
+		get_names(new, "Enter first name: ", "Enter last name: ");
+		new -> birthdate = get_date("Enter birthdate: ");
+		new -> ID = ID;
+		new -> miles = 0;
+		new -> flight_count = 0;
+		new -> first = NULL;
+		new -> next = NULL;
+
+		add_passenger_node(passengers, new);
+
+		printf("\nPassenger added successfully.\n\n");
+		(*passenger_count)++;
+	}
+	else
+	{
+		printf("\nPassenger with same passport number already exists.\n\n");
+	}
+}
+
+void add_passenger_node(Passenger **passengers, Passenger *new)
+{
+	if(!(*passengers)
+		|| compare_names((*passengers) -> lastname, new -> lastname) > 0
+		|| (compare_names((*passengers) -> lastname, new -> lastname) == 0 && compare_names((*passengers) -> firstname, new -> firstname) >= 0))
+	//	if passenger list is NULL or new node comes before head node
+	{
+		new -> next = *passengers;
+		*passengers = new;
+	}
+	else
+	{
+		Passenger *temp = *passengers;
+		while(temp)
+		{
+			if(compare_names(new -> lastname, temp -> lastname) > 0
+				|| (compare_names(new -> lastname, temp -> lastname) == 0 && compare_names(new -> firstname, temp -> firstname) >= 0))
+			{
+				temp = temp -> next;
+			}
+			else
+			{
+				break;
+			}
+		}
+
+		for(Passenger *prev = *passengers; prev; prev = prev -> next)
+		//	get node before temp
+		{
+			if(prev -> next == temp)
+			{
+				prev -> next = new;
+				new -> next = temp;
 			}
 		}
 	}
