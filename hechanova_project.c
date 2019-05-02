@@ -1,27 +1,8 @@
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "hechanova_project.h"
 
 int main(void)
 {
-	Flight *flights = NULL;
-	Passenger *passengers = NULL;
-	int flight_count = 0, passenger_count = 0;
-	while(1)
-	{
-		if(switchboard(&flights, &passengers, &flight_count, &passenger_count))
-		{
-			break;
-		}
-	}
-
-	// save(flights, passengers, flight_count, passenger_count);
-	// deallocate(&flights, &passengers);
-
-	printf("\nGoodbye!...\n\n");
+	RunApplication();
 
 	return 0;
 }
@@ -41,4 +22,3 @@ int main(void)
 	spam user prompts? maybe later
 
 */
-
