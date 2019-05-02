@@ -15,7 +15,7 @@ struct _Time
 
 struct _Flight
 {
-	int flight_ID;
+	int ID;
 	char destination[30];
 	char origin[30];
 	Date departure_date;
@@ -34,7 +34,7 @@ struct _Passenger
 	char firstname[30];
 	char lastname[30];
 	Date birthdate;
-	int passport_num;
+	int ID;
 	int miles;
 	int flight_count;
 	Flight_list *first;
@@ -231,11 +231,11 @@ void get_times(Flight *flight, char *prompt0, char *prompt1)
 int check_times(Time time0, Time time1)
 // returns 1 if time0 is after time1; else return 0
 {
-	if(time0.hh < time1.hh)
+	if(time0.hh >= time1.hh)
 	{
 		if(time0.hh == time1.hh)
 		{
-			if(time0.mm <= time1.mm)
+			if(time0.mm >= time1.mm)
 			{
 				return 1;
 			}
@@ -246,15 +246,34 @@ int check_times(Time time0, Time time1)
 	return 0;
 }
 
-Flight *found_flight(Flight *flights, int flight_ID)
+Flight *found_flight(Flight *flights, int ID)
 {
-    for(Flight *ptr = flights; ptr; ptr = ptr -> next)
-    {
-        if(ptr -> flight_ID == flight_ID)
-        {
-            return ptr;
-        }
-    }
+	for(Flight *flight = flights; flight; flight = flight -> next)
+	{
+		if(flight -> ID == ID)
+		{
+			return flight;
+		}
+	}
 
-    return NULL;
+	return NULL;
+}
+
+Flight *flightcpy(Flight *flight)
+{
+	Flight *new = malloc(sizeof(Flight));
+	new -> ID = flight -> ID;
+	strcpy(new -> destination, flight -> destination);
+	strcpy(new -> origin, flight -> origin);
+	new -> departure_date = flight -> departure_date;
+	new -> arrival_date = flight -> arrival_date;
+	new -> departure_time = flight -> departure_time;
+	new -> arrival_time = flight -> arrival_time;
+	new -> passenger_count = flight -> passenger_count;
+	new -> max_passengers = flight -> max_passengers;
+	new -> bonus_miles = flight -> bonus_miles;
+	new -> first = flight -> first;
+	new -> next = NULL;
+
+	return new;
 }

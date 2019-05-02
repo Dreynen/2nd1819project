@@ -27,3 +27,8 @@ void menu_out();
 int switchboard(Flight **, Passenger **, int *, int *);
 void add_flight(Flight **, int *);
 void add_flight_node(Flight **, Flight *);
+void edit_flight(Flight **);
+void view(Flight *);
+void view_flight(Flight *);
+void del_flight_node(Flight **, Flight *);
+
