@@ -21,4 +21,9 @@ int main(void)
 	how to properly cross-reference flights and passengers??
 	spam user prompts? maybe later
 
+	TODO
+	remove reservation
+	edit flight
+		after editing, check if conflict exists for any passenger
+
 */
