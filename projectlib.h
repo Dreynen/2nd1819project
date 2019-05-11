@@ -25,43 +25,37 @@ struct _Flight
 	int passenger_count;
 	int max_passengers;
 	int bonus_miles;
-	Passenger_list *first;
+	Passenger *passengers;
 	Flight *next;
 };
 
 struct _Passenger
 {
+	int ID;
 	char firstname[30];
 	char lastname[30];
 	Date birthdate;
-	int ID;
 	int miles;
 	int flight_count;
-	Flight_list *first;
+	Flight *flights;
 	Passenger *next;
-};
-
-struct _Flight_list
-{
-	Flight *info;
-	Flight_list *next;
-};
-
-struct _Passenger_list
-{
-	Passenger *info;
-	Passenger_list *next;
 };
 
 int get_int(char *prompt)
 //	prompts user for a positive integer
 {
 	int i;
+	char s[30], *end;
 
 	do
 	{
 		printf("%s", prompt);
-		scanf("%d", &i);
+		scanf("%s", s);
+		i = strtol(s, &end, 10);
+		if(s == end)
+		{
+			continue;
+		}
 	}
 	while(i < 0);
 
@@ -155,7 +149,7 @@ Time get_time(char *prompt)
 int valid_time(Time new)
 //	checks if hour and minute values are valid
 {
-	if(new.hh >= 00 && new.hh <= 24 && new.mm >= 0 && new.mm <= 60)
+	if(new.hh >= 00 && new.hh < 24 && new.mm >= 0 && new.mm < 60)
 	{
 		return 1;
 	}
@@ -168,9 +162,9 @@ void get_locations(Flight *flight, char *prompt0, char *prompt1)
 	do
 	{
 		printf("%s", prompt0);
-		scanf("%s", flight -> destination);
+		scanf(" %[^\n]", flight -> destination);
 		printf("%s", prompt1);
-		scanf("%s", flight -> origin);
+		scanf(" %[^\n]", flight -> origin);
 	}
 	while(compare_names(flight -> destination, flight -> origin) == 0);
 }
@@ -183,33 +177,19 @@ void get_dates(Flight *flight, char *prompt0, char *prompt1)
 		flight -> departure_date = get_date(prompt0);
 		flight -> arrival_date = get_date(prompt1);
 	}
-	while(!check_dates(flight -> arrival_date, flight -> departure_date));
+	while(check_dates(flight -> arrival_date, flight -> departure_date) == 0);
 }
 
 int check_dates(Date date0, Date date1)
 // returns 1 if date0 is after date1, returns -1 if dates are the same; else return 0
 {
-	if(date0.yyyy >= date1.yyyy)
+	if(date0.yyyy > date1.yyyy
+		|| (date0.yyyy == date1.yyyy && date0.mm > date1.mm)
+		|| (date0.yyyy == date1.yyyy && date0.mm == date1.mm && date0.dd >= date1.dd))
 	{
-		if(date0.yyyy == date1.yyyy)
+		if(date0.yyyy == date1.yyyy && date0.mm == date1.mm && date0.dd == date1.dd)
 		{
-			if(date0.mm >= date1.mm)
-			{
-				if(date0.mm == date1.mm)
-				{
-					if(date0.dd >= date1.dd)
-					{
-						if(date0.dd == date1.dd)
-						{
-							return -1;
-						}
-						return 1;
-					}
-					return 0;
-				}
-				return 1;
-			}
-			return 0;
+			return -1;
 		}
 		return 1;
 	}
@@ -223,31 +203,23 @@ void get_times(Flight *flight, char *prompt0, char *prompt1)
 		printf("\nFormat: [HH:MM]\n");
 		flight -> departure_time = get_time(prompt0);
 		flight -> arrival_time = get_time(prompt1);
-		if(check_dates(flight -> departure_date, flight -> arrival_date) == -1)
-		// if departure and arrival dates of flight are same, don't validate
+		if(check_dates(flight -> arrival_date, flight -> departure_date) > 0)
+		// if departure and arrival dates of flight are different, don't validate
 		{
-			break;
+			return;
 		}
 	}
-	while(!check_times(flight -> arrival_time, flight -> departure_time));
+	while(check_times(flight -> arrival_time, flight -> departure_time) <= 0);
 }
 
 int check_times(Time time0, Time time1)
-// returns 1 if time0 is after time1; else return 0
+// returns 1 if time0 is after time1, returns -1 if times are the same; else return 0
 {
-	if(time0.hh >= time1.hh)
+	if(time0.hh > time1.hh || (time0.hh == time1.hh && time0.mm >= time1.mm))
 	{
-		if(time0.hh == time1.hh)
+		if(time0.hh == time1.hh && time0.mm == time1.mm)
 		{
-			if(time0.mm >= time1.mm)
-			{
-				if(time0.mm == time1.mm)
-				{
-					return -1;
-				}
-				return 1;
-			}
-			return 0;
+			return -1;
 		}
 		return 1;
 	}
@@ -265,6 +237,20 @@ Flight *found_flight(Flight *flights, int ID)
 	}
 
 	return NULL;
+}
+
+int compare_flights(Flight *flight0, Flight *flight1)
+//	returns 1 if flight0 occurs after flight1; else return 0
+{
+	if(check_dates(flight0 -> departure_date, flight1 -> departure_date) > 0
+		|| (check_dates(flight0 -> departure_date, flight1 -> departure_date) < 0 && check_times(flight0 -> departure_time, flight1 -> departure_time) > 0)
+		|| (check_dates(flight0 -> departure_date, flight1 -> departure_date) < 0 && check_times(flight0 -> departure_time, flight1 -> departure_time) < 0 && compare_names(flight0 -> origin, flight1 -> origin) > 0)
+		|| (check_dates(flight0 -> departure_date, flight1 -> departure_date) < 0 && check_times(flight0 -> departure_time, flight1 -> departure_time) < 0 && compare_names(flight0 -> origin, flight1 -> origin) < 0 && compare_names(flight0 -> destination, flight1 -> destination) >= 0))
+	{
+		return 1;
+	}
+
+	return 0;
 }
 
 int compare_names(char *s, char *t)
@@ -302,13 +288,14 @@ Flight *flightcpy(Flight *flight)
 	new -> passenger_count = flight -> passenger_count;
 	new -> max_passengers = flight -> max_passengers;
 	new -> bonus_miles = flight -> bonus_miles;
-	new -> first = flight -> first;
+	new -> passengers = flight -> passengers;
 	new -> next = NULL;
 
 	return new;
 }
 
 Passenger *found_passenger(Passenger *passengers, int ID)
+//	returns a Passenger pointer if found in list; else returns NULL
 {
 	for(Passenger *passenger = passengers; passenger; passenger = passenger -> next)
 	{
@@ -321,9 +308,25 @@ Passenger *found_passenger(Passenger *passengers, int ID)
 }
 
 void get_names(Passenger *passenger, char *prompt0, char *prompt1)
+//	gets firstname and lastname of a passenger
 {
 	printf("%s", prompt0);
-	scanf("%s", passenger -> firstname);
+	scanf(" %[^\n]", passenger -> firstname);
 	printf("%s", prompt1);
-	scanf("%s", passenger -> lastname);
+	scanf(" %[^\n]", passenger -> lastname);
+}
+
+Passenger *passengercpy(Passenger *passenger)
+{
+	Passenger *new = malloc(sizeof(Passenger));
+	strcpy(new -> firstname, passenger -> firstname);
+	strcpy(new -> lastname, passenger -> lastname);
+	new -> birthdate = passenger -> birthdate;
+	new -> ID = passenger -> ID;
+	new -> miles = passenger -> miles;
+	new -> flight_count = passenger -> flight_count;
+	new -> flights = passenger -> flights;
+	new -> next = NULL;
+
+	return new;
 }
