@@ -2,6 +2,7 @@
 
 int main(void)
 {
+<<<<<<< HEAD
     //  intialization of variables
     F_info *flights = NULL;
     P_info *passengers = NULL;
@@ -17,6 +18,9 @@ int main(void)
 
 	save(flights, passengers, flight_count, passenger_count);
 	deallocate(&flights, &passengers);
+=======
+    RunApplication();
+>>>>>>> new
 
     return 0;
 }

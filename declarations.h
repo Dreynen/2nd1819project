@@ -31,6 +31,10 @@ P_info *P_infocpy(P_info *);
 Flight *found_flight(Flight *, int);
 Passenger *found_passenger(Passenger *, int);
 
+<<<<<<< HEAD
+=======
+void RunApplication();
+>>>>>>> new
 void menu_out();
 int switchboard(F_info **, P_info **, int *, int *);
 void add_F_info(F_info **, int *);
