@@ -2,7 +2,7 @@
 
 int main(void)
 {
-    run_application();
+    RunApplication();
 
     return 0;
 }

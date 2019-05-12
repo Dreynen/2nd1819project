@@ -1,21 +1,5 @@
 #include "project_lib.h"
 
-void run_application()
-{
-    F_info *flights = NULL;
-    P_info *passengers = NULL;
-    int flight_count = 0, passenger_count = 0;
-
-    do
-    {
-        menu_out();
-    }
-	while(switchboard(&flights, &passengers, &flight_count, &passenger_count));
-
-	save(flights, passengers, flight_count, passenger_count);
-	deallocate(&flights, &passengers);
-}
-
 void menu_out()
 {
 	printf("[1] Add A Flight\n");
