@@ -108,9 +108,6 @@ struct tm get_date(char *prompt)
 			count++;
 		}
 
-
-		//	normalize new_tm
-		mktime(&new_tm);
 	}
 	while(!valid_date(new_tm));
 
@@ -219,7 +216,7 @@ struct tm get_time(char *prompt, struct tm new_tm)
 
 int valid_times(struct tm time0, struct tm time1)
 {
-	if(time0.tm_hour > time1.tm_hour ||(time0.tm_hour == time1.tm_hour && time0.tm_min >= time1.tm_min))
+	if(time0.tm_hour > time1.tm_hour || (time0.tm_hour == time1.tm_hour && time0.tm_min >= time1.tm_min))
 	{
 		if(time0.tm_hour == time1.tm_hour && time0.tm_min == time1.tm_min)
 		{
@@ -250,20 +247,16 @@ void get_dates(F_info *flight, char *prompt0, char *prompt1)
 	//	normalize current_tm
 	mktime(&current_tm);
 
+	printf("\nFormat: [MM/DD/YYYY]\n");
 	do
 	{
-		printf("\nFormat: [MM/DD/YYYY]\n");
-		do
-		{
-			flight -> departure = get_date(prompt0);
-		}
-		while(!valid_dates(flight -> departure, current_tm));
+		flight -> departure = get_date(prompt0);
+	}
+	while(!valid_dates(flight -> departure, current_tm));
 
-		do
-		{
-			flight -> arrival = get_date(prompt1);
-		}
-		while(!valid_dates(flight -> arrival, current_tm));
+	do
+	{
+		flight -> arrival = get_date(prompt1);
 	}
 	while(!valid_dates(flight -> arrival, flight -> departure));
 }
@@ -276,22 +269,23 @@ void get_times(F_info *flight, char *prompt0, char *prompt1)
 	//	normalize current_tm
 	mktime(&current_tm);
 
+	printf("\nFormat: [HH:MM]\n");
 	do
 	{
-		printf("\nFormat: [MM/DD/YYYY]\n");
-		do
+		flight -> departure = get_time(prompt0, flight -> departure);
+		//	if departure date of flight is different from current date
+		if(valid_dates(flight -> departure, current_tm) > 0)
 		{
-			flight -> departure = get_time(prompt0, flight -> departure);
+			break;
 		}
-		while(!valid_dates(flight -> departure, current_tm));
+	}
+	while(!valid_times(flight -> departure, current_tm));
 
-		do
-		{
-			flight -> arrival = get_time(prompt1, flight -> arrival);
-		}
-		while(!valid_dates(flight -> arrival, current_tm));
+	do
+	{
+		flight -> arrival = get_time(prompt1, flight -> arrival);
 
-		//	if flight departure and arrival is different
+		//	if departure date and arrival date of flight are different
 		if(valid_dates(flight -> arrival, flight -> departure) > 0)
 		{
 			break;

@@ -6,8 +6,6 @@
 
 char *strtok(char *, const char *);
 
-typedef struct _Date Date;
-typedef struct _Time Time;
 typedef struct _F_info F_info;
 typedef struct _P_info P_info;
 typedef struct _Flight Flight;
@@ -33,7 +31,6 @@ P_info *P_infocpy(P_info *);
 Flight *found_flight(Flight *, int);
 Passenger *found_passenger(Passenger *, int);
 
-void run_application();
 void menu_out();
 int switchboard(F_info **, P_info **, int *, int *);
 void add_F_info(F_info **, int *);
