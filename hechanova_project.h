@@ -1,4 +1,23 @@
-#include "project_lib.h"
+#include "projectlib.h"
+
+//	initialization of variables
+void RunApplication()
+{
+	F_info *flights = NULL;
+    P_info *passengers = NULL;
+    int flight_count = 0, passenger_count = 0;
+
+    load(&flights, &passengers, &flight_count, &passenger_count);
+
+    do
+    {
+        menu_out();
+    }
+    while(switchboard(&flights, &passengers, &flight_count, &passenger_count));
+
+    save(flights, passengers, flight_count, passenger_count);
+    deallocate(&flights, &passengers);
+}
 
 void menu_out()
 {
@@ -141,49 +160,62 @@ void edit_F_info(F_info **flights, P_info *passengers)
 
 			if(choice > 0 && choice < 4)
 			{
-				F_info *new = F_infocpy(flight);
+				int conflict = 0;
+				struct tm old_dep = flight -> departure, old_arr = flight -> arrival;
 				switch(choice)
 				{
 					case 1:
 						flight -> max_passengers = get_int("Enter new maximum value: ");
 						break;
 					case 2:
-						get_dates(new, "Enter new departure date: ", "Enter new arrival date:   ");
+						get_dates(flight, "Enter new departure date: ", "Enter new arrival date:   ");
+						if(valid_dates(flight -> arrival, flight -> departure) < 0 && !valid_times(flight -> arrival, flight -> departure))
+						{
+							conflict = -1;
+						}
+						else
+						{
+							for(P_info *passenger = passengers; passenger; passenger = passenger -> next)
+							{
+								if(flight_conflict(passenger -> flights, flight))
+								{
+									conflict = 1;
+									break;
+								}
+							}
+						}
 						break;
 					case 3:
-						get_times(new, "Enter new departure time: ", "Enter new arrival time:   ");
+						get_times(flight, "Enter new departure time: ", "Enter new arrival time:   ");
+						for(P_info *passenger = passengers; passenger; passenger = passenger -> next)
+						{
+							if(flight_conflict(passenger -> flights, flight))
+							{
+								conflict = 1;
+								break;
+							}
+						}
 						break;
-				}
-
-				//	create a copy of flight
-				F_info *flightcpy = F_infocpy(flight);
-
-				//	temporarily remove flight from flight list
-				del_F_info_node(flights, flight);
-
-				int conflict = 0;
-				for(P_info *passenger = passengers; passenger; passenger = passenger -> next)
-				{
-					if(flight_conflict(passenger -> flights, new))
-					{
-						conflict = 1;
-						break;
-					}
-
 				}
 
 				if(!conflict)
 				{
-					add_F_info_node(flights, new);
-					free(flightcpy);
+					rm_F_info_node(flights, flight);
+					add_F_info_node(flights, flight);
 					printf("\nFlight edited successfully.\n");
 				}
 				else
 				{
-					//	reinsert copy to flight list
-					add_F_info_node(flights, flightcpy);
-					free(new);
-					printf("\nError: A passenger has flight conflicts with new schedule.\n");
+					if(conflict > 0)
+					{
+						printf("\nError: A passenger reservation has a conflict with the new schedule.\n");
+					}
+					else
+					{
+						printf("\nError: Departure and arrival times of new schedule is invalid.\n");
+					}
+					flight -> departure = old_dep;
+					flight -> arrival = old_arr;
 				}
 			}
 			else if(choice != 4)
@@ -506,8 +538,11 @@ void book_reservation(F_info *flights, P_info *passengers)
 				F_info *flight = found_F_info(flights, flight_ID);
 				if(flight)
 				{
-					int conflict = flight_conflict(passenger -> flights, flight);
-					if(!conflict)
+					if(found_passenger(flight -> passengers, passenger -> passport_num))
+					{
+						printf("\nError: Passenger has already booked this flight.\n");
+					}
+					else if(!flight_conflict(passenger -> flights, flight))
 					{
 						if(flight -> passenger_count < flight -> max_passengers)
 						{
@@ -530,10 +565,6 @@ void book_reservation(F_info *flights, P_info *passengers)
 						{
 							printf("\nError: Flight has reached max number of passengers.\n");
 						}
-					}
-					else if(conflict < 0)
-					{
-						printf("\nError: Passenger has already booked this flight.\n");
 					}
 					else
 					{
@@ -566,16 +597,13 @@ int flight_conflict(Flight *flights, F_info *to_book)
 {
 	for(Flight *flight = flights; flight; flight = flight -> next)
 	{
-		if((valid_dates(flight -> info -> departure, to_book -> arrival) > 0
-			|| (valid_dates(flight -> info -> departure, to_book -> arrival) < 0 && valid_times(flight -> info -> departure, to_book -> arrival) > 0))
-		|| (valid_dates(to_book -> arrival, flight -> info -> departure) > 0
-			|| (valid_dates(to_book -> arrival, flight -> info -> departure) < 0 && valid_times(to_book -> arrival, flight -> info -> departure) > 0)))
+		if(flight -> info == to_book
+			|| (valid_dates(flight -> info -> departure, to_book -> arrival) > 0
+				|| (valid_dates(flight -> info -> departure, to_book -> arrival) < 0 && valid_times(flight -> info -> departure, to_book -> arrival) > 0))
+			|| (valid_dates(to_book -> departure, flight -> info -> arrival) > 0
+				|| (valid_dates(to_book -> departure, flight -> info -> arrival) < 0 && valid_times(to_book -> departure, flight -> info -> arrival) > 0)))
 		{
 			continue;
-		}
-		else if(flight -> info == to_book)
-		{
-			return -1;
 		}
 		else
 		{
@@ -870,6 +898,7 @@ void save(F_info *flights, P_info *passengers, int flight_count, int passenger_c
 	{
 		for(F_info *flight = flights; flight; flight = flight -> next)
 		{
+			fprintf(file, "%d|", flight -> flight_ID);
 			for(Passenger *passenger = flight -> passengers; passenger; passenger = passenger -> next)
 			{
 				fprintf(file, "%d|", passenger -> info -> passport_num);
@@ -884,6 +913,7 @@ void save(F_info *flights, P_info *passengers, int flight_count, int passenger_c
 	{
 		for(P_info *passenger = passengers; passenger; passenger = passenger -> next)
 		{
+			fprintf(file, "%d|", passenger -> passport_num);
 			for(Flight *flight = passenger -> flights; flight; flight = flight -> next)
 			{
 				fprintf(file, "%d|", flight -> info -> flight_ID);
@@ -947,14 +977,16 @@ void load(F_info **flights, P_info **passengers, int *flight_count, int *passeng
 	file = fopen("files/flight_passengers.txt", "r");
 	if(file)
 	{
-		int ID;
-		for(F_info *flight = *flights; flight; flight = flight -> next)
+		int flight_ID, passport_num;
+		for(int i = 0; i < (*flight_count); i++)
 		{
-			for(int i = 0; i < flight -> passenger_count; i++)
+			fscanf(file, " %d|", &flight_ID);
+			F_info *flight = found_F_info(*flights, flight_ID);
+			for(int j = 0; j < flight -> passenger_count; j++)
 			{
-				fscanf(file, " %d|", &ID);
+				fscanf(file, "%d|", &passport_num);
 				Passenger *new = malloc(sizeof(Passenger));
-				new -> info = found_P_info(*passengers, ID);
+				new -> info = found_P_info(*passengers, passport_num);
 				new -> next = NULL;
 				add_passenger_node(&(flight -> passengers), new);
 			}
@@ -965,14 +997,16 @@ void load(F_info **flights, P_info **passengers, int *flight_count, int *passeng
 	file = fopen("files/passenger_flights.txt", "r");
 	if(file)
 	{
-		int ID;
-		for(P_info *passenger = *passengers; passenger; passenger = passenger -> next)
+		int passport_num, flight_ID;
+		for(int i = 0; i < (*passenger_count); i++)
 		{
-			for(int i = 0; i < passenger -> flight_count; i++)
+			fscanf(file, " %d|", &passport_num);
+			P_info *passenger = found_P_info(*passengers, passport_num);
+			for(int j = 0; j < passenger -> flight_count; j++)
 			{
-				fscanf(file, " %d|", &ID);
+				fscanf(file, " %d|", &flight_ID);
 				Flight *new = malloc(sizeof(Flight));
-				new -> info = found_F_info(*flights, ID);
+				new -> info = found_F_info(*flights, flight_ID);
 				new -> next = NULL;
 				add_flight_node(&(passenger -> flights), new);
 			}
