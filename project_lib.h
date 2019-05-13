@@ -82,9 +82,8 @@ int strisdigits(char *s)
     return 1;
 }
 
-struct tm get_date(char *prompt)
+struct tm get_date(char *prompt, struct tm new_tm)
 {
-	struct tm new_tm = {};
 	char s[11];
 	int count;
 
@@ -250,13 +249,13 @@ void get_dates(F_info *flight, char *prompt0, char *prompt1)
 	printf("\nFormat: [MM/DD/YYYY]\n");
 	do
 	{
-		flight -> departure = get_date(prompt0);
+		flight -> departure = get_date(prompt0, flight -> departure);
 	}
 	while(!valid_dates(flight -> departure, current_tm));
 
 	do
 	{
-		flight -> arrival = get_date(prompt1);
+		flight -> arrival = get_date(prompt1, flight -> arrival);
 	}
 	while(!valid_dates(flight -> arrival, flight -> departure));
 }
@@ -273,6 +272,7 @@ void get_times(F_info *flight, char *prompt0, char *prompt1)
 	do
 	{
 		flight -> departure = get_time(prompt0, flight -> departure);
+
 		//	if departure date of flight is different from current date
 		if(valid_dates(flight -> departure, current_tm) > 0)
 		{
@@ -337,6 +337,23 @@ int F_infocmp(F_info *flight0, F_info *flight1)
 	}
 
 	return 0;
+}
+
+F_info *F_infocpy(F_info *flight)
+{
+	F_info *new = malloc(sizeof(F_info));
+	new -> flight_ID = flight -> flight_ID;
+	strcpy(new -> destination, flight -> destination);
+	strcpy(new -> origin, flight -> origin);
+	new -> departure = flight -> departure;
+	new -> arrival = flight -> arrival;
+	new -> passenger_count = flight -> passenger_count;
+	new -> max_passengers = flight -> max_passengers;
+	new -> bonus_miles = flight -> bonus_miles;
+	new -> passengers = flight -> passengers;
+	new -> next = NULL;
+
+	return new;
 }
 
 P_info *found_P_info(P_info *passengers, int passport_num)

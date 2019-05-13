@@ -1,23 +1,5 @@
 #include "project_lib.h"
 
-void RunApplication()
-{
-    F_info *flights = NULL;
-    P_info *passengers = NULL;
-    int flight_count = 0, passenger_count = 0;
-
-    load(&flights, &passengers, &flight_count, &passenger_count);
-
-    do
-    {
-        menu_out();
-    }
-    while(switchboard(&flights, &passengers, &flight_count, &passenger_count));
-
-    save(flights, passengers, flight_count, passenger_count);
-    deallocate(&flights, &passengers);
-}
-
 void menu_out()
 {
 	printf("[1] Add A Flight\n");
@@ -33,7 +15,6 @@ void menu_out()
 }
 
 int switchboard(F_info **flights, P_info **passengers, int *flight_count, int *passenger_count)
-//	switch for selection of menu option
 {
 	int choice = get_int("Choice: ");
 
@@ -42,9 +23,9 @@ int switchboard(F_info **flights, P_info **passengers, int *flight_count, int *p
 		case 1:
 			add_F_info(flights, flight_count);
 			break;
-// 		case 2:
-// 			edit_flight(flights, passengers);
-// 			break;
+		case 2:
+			edit_F_info(flights, *passengers);
+			break;
 		case 3:
 			view(*flights);
 			break;
@@ -55,7 +36,7 @@ int switchboard(F_info **flights, P_info **passengers, int *flight_count, int *p
 			add_P_info(passengers, passenger_count);
 			break;
 		case 6:
-			edit_P_info(passengers);
+			edit_P_info(*flights, passengers);
 			break;
 		case 7:
 			book_reservation(*flights, *passengers);
@@ -94,13 +75,14 @@ void add_F_info(F_info **flights, int *flight_count)
 
 			add_F_info_node(flights, new);
 
-			printf("\nFlight added successfully.\n\n");
+			printf("\nFlight added successfully.\n");
 			(*flight_count)++;
 	}
 	else
 	{
-		printf("\nFlight with same flight ID already exists.\n\n");
+		printf("\nFlight with same flight ID already exists.\n");
 	}
+	printf("\n");
 }
 
 void add_F_info_node(F_info **flights, F_info *new)
@@ -134,16 +116,91 @@ void add_F_info_node(F_info **flights, F_info *new)
 			{
 				prev -> next = new;
 				new -> next = temp;
+				break;
 			}
 		}
 
 	}
 }
 
-void edit_F_info(F_info **flights, P_info **passengers)
+void edit_F_info(F_info **flights, P_info *passengers)
 {
-	printf("\nTO-DO\n\n");
-	return;
+	if(*flights)
+	{
+		printf("\nEDIT A FLIGHT\n");
+		int flight_ID = get_int("Enter flight ID: ");
+		F_info *flight = found_F_info(*flights, flight_ID);
+		if(flight)
+		{
+			view_flight(flight);
+			printf("\n[1] Edit Max Count of Passengers\n");
+			printf("[2] Edit Departure and Arrival Date\n");
+			printf("[3] Edit Departure and Arrival Time\n");
+			printf("[4] Back\n");
+			int choice = get_int("Choice: ");
+
+			if(choice > 0 && choice < 4)
+			{
+				F_info *new = F_infocpy(flight);
+				switch(choice)
+				{
+					case 1:
+						flight -> max_passengers = get_int("Enter new maximum value: ");
+						break;
+					case 2:
+						get_dates(new, "Enter new departure date: ", "Enter new arrival date:   ");
+						break;
+					case 3:
+						get_times(new, "Enter new departure time: ", "Enter new arrival time:   ");
+						break;
+				}
+
+				//	create a copy of flight
+				F_info *flightcpy = F_infocpy(flight);
+
+				//	temporarily remove flight from flight list
+				del_F_info_node(flights, flight);
+
+				int conflict = 0;
+				for(P_info *passenger = passengers; passenger; passenger = passenger -> next)
+				{
+					if(flight_conflict(passenger -> flights, new))
+					{
+						conflict = 1;
+						break;
+					}
+
+				}
+
+				if(!conflict)
+				{
+					add_F_info_node(flights, new);
+					free(flightcpy);
+					printf("\nFlight edited successfully.\n");
+				}
+				else
+				{
+					//	reinsert copy to flight list
+					add_F_info_node(flights, flightcpy);
+					free(new);
+					printf("\nError: A passenger has flight conflicts with new schedule.\n");
+				}
+			}
+			else if(choice != 4)
+			{
+				printf("\n1-4 only.\n");
+			}
+		}
+		else
+		{
+			printf("\nError: Flight not found.\n");
+		}
+	}
+	else
+	{
+		printf("\nError: No flights in list yet.\n");
+	}
+	printf("\n");
 }
 
 void view(F_info *flights)
@@ -160,17 +217,16 @@ void view(F_info *flights)
 		switch(choice)
 		{
 			case 1:
-			// if a specific flight is in list, prints details
 			{
 				int flight_ID = get_int("Enter flight ID: ");
 				F_info *flight = found_F_info(flights, flight_ID);
 				if(flight)
 				{
-					view_F_info(flight);
+					view_flight(flight);
 				}
 				else
 				{
-					printf("\nError: Flight not found.\n\n");
+					printf("\nError: Flight not found.\n");
 				}
 				break;
 			}
@@ -181,7 +237,7 @@ void view(F_info *flights)
 				{
 					if((flight -> passenger_count) < (flight -> max_passengers))
 					{
-						view_F_info(flight);
+						view_flight(flight);
 					}
 				}
 				break;
@@ -193,7 +249,7 @@ void view(F_info *flights)
 				{
 					if((flight -> passenger_count) == (flight -> max_passengers))
 					{
-						view_F_info(flight);
+						view_flight(flight);
 					}
 				}
 				break;
@@ -203,7 +259,7 @@ void view(F_info *flights)
 			{
 				for(F_info *flight = flights; flight; flight = flight -> next)
 				{
-					view_F_info(flight);
+					view_flight(flight);
 				}
 				break;
 			}
@@ -216,11 +272,12 @@ void view(F_info *flights)
 	}
 	else
 	{
-		printf("\nError: No flights in list yet.\n\n");
+		printf("\nError: No flights in list yet.\n");
 	}
+	printf("\n");
 }
 
-void view_F_info(F_info *flight)
+void view_flight(F_info *flight)
 {
 	printf("\nFlight ID: %d\n", flight -> flight_ID);
 	printf("Destination: %s\n", flight -> destination);
@@ -250,28 +307,29 @@ void del_F_info(F_info **flights, int *flight_count)
 				{
 					del_F_info_node(flights, flight);
 
-					printf("\nFlight deleted successfully.\n\n");
+					printf("\nFlight deleted successfully.\n");
 					(*flight_count)--;
 				}
 				else
 				{
-					printf("\nFlight not deleted.\n\n");
+					printf("\nFlight not deleted.\n");
 				}
 			}
 			else
 			{
-				printf("\nError: Unable to delete flight with passengers.\n\n");
+				printf("\nError: Unable to delete flight with passengers.\n");
 			}
 		}
 		else
 		{
-			printf("\nError: Flight not found.\n\n");
+			printf("\nError: Flight not found.\n");
 		}
 	}
 	else
 	{
-		printf("Error: No flights in list yet.\n\n");
+		printf("Error: No flights in list yet.\n");
 	}
+	printf("\n");
 }
 
 void del_F_info_node(F_info **flights, F_info *to_delete)
@@ -280,7 +338,6 @@ void del_F_info_node(F_info **flights, F_info *to_delete)
 	//	if node to be deleted is head
 	{
 		*flights = to_delete -> next;
-		free(to_delete);
 	}
 	else
 	{
@@ -290,11 +347,11 @@ void del_F_info_node(F_info **flights, F_info *to_delete)
 			if(prev -> next == to_delete)
 			{
 				prev -> next = to_delete -> next;
-				free(to_delete);
 				break;
 			}
 		}
 	}
+	free(to_delete);
 }
 
 void add_P_info(P_info **passengers, int *passenger_count)
@@ -305,7 +362,7 @@ void add_P_info(P_info **passengers, int *passenger_count)
 	{
 		P_info *new = malloc(sizeof(P_info));
 		get_names(new, "Enter first name: ", "Enter last name: ");
-		new -> birthdate = get_date("Format: [MM/DD/YYYY]\nEnter birthdate: ");
+		new -> birthdate = get_date("Format: [MM/DD/YYYY]\nEnter birthdate: ", new -> birthdate);
 		new -> passport_num = passport_num;
 		new -> miles = 0;
 		new -> flight_count = 0;
@@ -313,14 +370,15 @@ void add_P_info(P_info **passengers, int *passenger_count)
 		new -> next = NULL;
 
 		add_P_info_node(passengers, new);
-
-		printf("\nPassenger added successfully.\n\n");
 		(*passenger_count)++;
+
+		printf("\nPassenger added successfully.\n");
 	}
 	else
 	{
-		printf("\nPassenger with same passport number already exists.\n\n");
+		printf("\nPassenger with same passport number already exists.\n");
 	}
+	printf("\n");
 }
 
 void add_P_info_node(P_info **passengers, P_info *new)
@@ -335,13 +393,13 @@ void add_P_info_node(P_info **passengers, P_info *new)
 	}
 	else
 	{
-		P_info *temp = *passengers;
-		while(temp)
+		P_info *passenger = *passengers;
+		while(passenger)
 		{
-			if(namecmp(new -> lastname, temp -> lastname) > 0
-				|| (namecmp(new -> lastname, temp -> lastname) == 0 && namecmp(new -> firstname, temp -> firstname) >= 0))
+			if(namecmp(new -> lastname, passenger -> lastname) > 0
+				|| (namecmp(new -> lastname, passenger -> lastname) == 0 && namecmp(new -> firstname, passenger -> firstname) >= 0))
 			{
-				temp = temp -> next;
+				passenger = passenger -> next;
 			}
 			else
 			{
@@ -352,16 +410,17 @@ void add_P_info_node(P_info **passengers, P_info *new)
 		//	get node before temp
 		for(P_info *prev = *passengers; prev; prev = prev -> next)
 		{
-			if(prev -> next == temp)
+			if(prev -> next == passenger)
 			{
 				prev -> next = new;
-				new -> next = temp;
+				new -> next = passenger;
+				break;
 			}
 		}
 	}
 }
 
-void edit_P_info(P_info **passengers)
+void edit_P_info(F_info *flights, P_info **passengers)
 {
 	if(*passengers)
 	{
@@ -388,36 +447,35 @@ void edit_P_info(P_info **passengers)
 						add_P_info_node(passengers, new);
 						break;
 					case 2:
-						passenger -> birthdate = get_date("Format: [MM/DD/YYYY]\nEnter new birthdate: ");
+						passenger -> birthdate = get_date("Format: [MM/DD/YYYY]\nEnter new birthdate: ", passenger -> birthdate);
 						break;
 				}
 
-				printf("\nPassenger edited successfully.\n\n");
+				printf("\nPassenger edited successfully.\n");
 			}
 			else if(choice != 3)
 			{
-				printf("\n1 - 3 only.\n\n");
+				printf("\n1 - 3 only.\n");
 			}
 		}
 		else
 		{
-			printf("\nError: Passenger not found.\n\n");
+			printf("\nError: Passenger not found.\n");
 		}
 	}
 	else
 	{
-		printf("\nError: No passengers in list yet.\n\n");
+		printf("\nError: No passengers in list yet.\n");
 	}
+	printf("\n");
 }
 
 void del_P_info_node(P_info **passengers, P_info *to_delete)
 {
-	if(*passengers == to_delete)
 	//	if node to be deleted is head
+	if(*passengers == to_delete)
 	{
-		P_info *temp = *passengers;
-		*passengers = temp -> next;
-		free(to_delete);
+		*passengers = to_delete -> next;
 	}
 	else
 	{
@@ -426,11 +484,11 @@ void del_P_info_node(P_info **passengers, P_info *to_delete)
 			if(passenger -> next == to_delete)
 			{
 				passenger -> next = to_delete -> next;
-				free(to_delete);
 				break;
 			}
 		}
 	}
+	free(to_delete);
 }
 
 void book_reservation(F_info *flights, P_info *passengers)
@@ -463,44 +521,45 @@ void book_reservation(F_info *flights, P_info *passengers)
 							new_f -> next = NULL;
 							add_flight_node(&(passenger -> flights), new_f);
 
-							(passenger -> miles)++;
-							(passenger -> flight_count)++;
 							(flight -> passenger_count)++;
-							printf("\nFlight reservation booked successfully.\n\n");
+							(passenger -> flight_count)++;
+							(passenger -> miles)++;
+							printf("\nFlight reservation booked successfully.\n");
 						}
 						else
 						{
-							printf("\nError: Flight has reached max number of passengers.\n\n");
+							printf("\nError: Flight has reached max number of passengers.\n");
 						}
 					}
 					else if(conflict < 0)
 					{
-						printf("\nError: Passenger has already booked this flight.\n\n");
+						printf("\nError: Passenger has already booked this flight.\n");
 					}
 					else
 					{
-						printf("\nError: Flight has conflict with a currently booked flight.\n\n");
+						printf("\nError: Flight has conflict with a currently booked flight.\n");
 					}
 				}
 				else
 				{
-					printf("\nError: Flight not found.\n\n");
+					printf("\nError: Flight not found.\n");
 				}
 			}
 			else
 			{
-				printf("\nError: Passenger not found.\n\n");
+				printf("\nError: Passenger not found.\n");
 			}
 		}
 		else
 		{
-			printf("\nError: No passengers in list yet.\n\n");
+			printf("\nError: No passengers in list yet.\n");
 		}
 	}
 	else
 	{
-		printf("\nError: No flights in list yet.\n\n");
+		printf("\nError: No flights in list yet.\n");
 	}
+	printf("\n");
 }
 
 int flight_conflict(Flight *flights, F_info *to_book)
@@ -514,7 +573,7 @@ int flight_conflict(Flight *flights, F_info *to_book)
 		{
 			continue;
 		}
-		else if(flight -> info -> flight_ID == to_book -> flight_ID)
+		else if(flight -> info == to_book)
 		{
 			return -1;
 		}
@@ -554,6 +613,7 @@ void add_flight_node(Flight **flights, Flight *new)
 			{
 				prev -> next = new;
 				new -> next = flight;
+				break;
 			}
 		}
 	}
@@ -590,6 +650,7 @@ void add_passenger_node(Passenger **passengers, Passenger *new)
 			{
 				prev -> next = new;
 				new -> next = passenger;
+				break;
 			}
 		}
 	}
@@ -628,79 +689,75 @@ void rm_reservation(F_info *flights, P_info *passengers)
 
 									(flight -> passenger_count)--;
 									(passenger -> flight_count)--;
-									printf("\nFlight reservation removed successfully.\n\n");
+									printf("\nFlight reservation removed successfully.\n");
 								}
 								else
 								{
-									printf("\nFlight reservation not deleted.\n\n");
+									printf("\nFlight reservation not deleted.\n");
 								}
 							}
 							else
 							{
-								printf("\nError: Passenger not in flight.\n\n");
+								printf("\nError: Passenger not in flight.\n");
 							}
 						}
 						else
 						{
-							printf("\nError: No passengers in flight.\n\n");
+							printf("\nError: No passengers in flight.\n");
 						}
 					}
 					else
 					{
-						printf("\nError: Flight not in list.\n\n");
+						printf("\nError: Flight not in list.\n");
 					}
 				}
 				else
 				{
-					printf("\nError: Passenger has no flight reservations.\n\n");
+					printf("\nError: Passenger has no flight reservations.\n");
 				}
 			}
 			else
 			{
-				printf("\nError: Passenger not in list.\n\n");
+				printf("\nError: Passenger not in list.\n");
 			}
 		}
 		else
 		{
-			printf("\nError: No passengers in list yet.\n\n");
+			printf("\nError: No passengers in list yet.\n");
 		}
 	}
 	else
 	{
-		printf("\nError: No flights in list yet.\n\n");
+		printf("\nError: No flights in list yet.\n");
 	}
+	printf("\n");
 }
 
 void del_flight_node(Flight **flights, Flight *to_delete)
 {
 	if(*flights == to_delete)
-	//	if node to be deleted is head
 	{
 		*flights = to_delete -> next;
-		free(to_delete);
 	}
 	else
 	{
 		for(Flight *prev = *flights; prev; prev = prev -> next)
-		//	get node before node to be deleted
 		{
 			if(prev -> next == to_delete)
 			{
 				prev -> next = to_delete -> next;
-				free(to_delete);
 				break;
 			}
 		}
 	}
+	free(to_delete);
 }
 
 void del_passenger_node(Passenger **passengers, Passenger *to_delete)
 {
 	if(*passengers == to_delete)
-	//	if node to be deleted is head
 	{
 		*passengers = to_delete -> next;
-		free(to_delete);
 	}
 	else
 	{
@@ -709,11 +766,11 @@ void del_passenger_node(Passenger **passengers, Passenger *to_delete)
 			if(prev -> next == to_delete)
 			{
 				prev -> next = to_delete -> next;
-				free(to_delete);
 				break;
 			}
 		}
 	}
+	free(to_delete);
 }
 
 void view_reservations(P_info *passengers)
@@ -729,24 +786,25 @@ void view_reservations(P_info *passengers)
 			{
 				for(Flight *flight = passenger -> flights; flight; flight = flight -> next)
 				{
-					view_F_info(flight -> info);
+					view_flight(flight -> info);
 				}
 				printf("\n");
 			}
 			else
 			{
-				printf("\nPassenger has no reservations.\n\n");
+				printf("\nPassenger has no reservations.\n");
 			}
 		}
 		else
 		{
-			printf("\nPassenger not in list.\n\n");
+			printf("\nPassenger not in list.\n");
 		}
 	}
 	else
 	{
-		printf("\nNo passengers in list yet.\n\n");
+		printf("\nNo passengers in list yet.\n");
 	}
+	printf("\n");
 }
 
 void deallocate(F_info **flights, P_info **passengers)
@@ -850,7 +908,7 @@ void load(F_info **flights, P_info **passengers, int *flight_count, int *passeng
 			fscanf(file, "%[^|]|", new -> destination);
 			fscanf(file, "%[^|]|", new -> origin);
 			fscanf(file, "%d/%d/%d|", &departure.tm_mon, &departure.tm_mday, &departure.tm_year);
-			fscanf(file, "%d/%d/%d|", &arrival.tm_mon, &(arrival.tm_mday), &arrival.tm_year);
+			fscanf(file, "%d/%d/%d|", &arrival.tm_mon, &arrival.tm_mday, &arrival.tm_year);
 			fscanf(file, "%d:%d|", &departure.tm_hour, &departure.tm_min);
 			fscanf(file, "%d:%d|", &arrival.tm_hour, &arrival.tm_min);
 			fscanf(file, "%d/%d|", &(new -> passenger_count), &(new -> max_passengers));
@@ -895,9 +953,8 @@ void load(F_info **flights, P_info **passengers, int *flight_count, int *passeng
 			for(int i = 0; i < flight -> passenger_count; i++)
 			{
 				fscanf(file, " %d|", &ID);
-				P_info *passenger = found_P_info(*passengers, ID);
 				Passenger *new = malloc(sizeof(Passenger));
-				new -> info = passenger;
+				new -> info = found_P_info(*passengers, ID);
 				new -> next = NULL;
 				add_passenger_node(&(flight -> passengers), new);
 			}
@@ -914,9 +971,8 @@ void load(F_info **flights, P_info **passengers, int *flight_count, int *passeng
 			for(int i = 0; i < passenger -> flight_count; i++)
 			{
 				fscanf(file, " %d|", &ID);
-				F_info *flight = found_F_info(*flights, ID);
 				Flight *new = malloc(sizeof(Flight));
-				new -> info = flight;
+				new -> info = found_F_info(*flights, ID);
 				new -> next = NULL;
 				add_flight_node(&(passenger -> flights), new);
 			}

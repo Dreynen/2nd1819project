@@ -13,7 +13,7 @@ typedef struct _Passenger Passenger;
 
 int get_int(char *);
 int strisdigits(char *);
-struct tm get_date(char *);
+struct tm get_date(char *, struct tm);
 int valid_date(struct tm);
 int valid_dates(struct tm, struct tm);
 struct tm get_time(char *, struct tm);
@@ -31,22 +31,18 @@ P_info *P_infocpy(P_info *);
 Flight *found_flight(Flight *, int);
 Passenger *found_passenger(Passenger *, int);
 
-<<<<<<< HEAD
-=======
-void RunApplication();
->>>>>>> new
 void menu_out();
 int switchboard(F_info **, P_info **, int *, int *);
 void add_F_info(F_info **, int *);
 void add_F_info_node(F_info **, F_info *);
-void edit_F_info(F_info **, P_info **);
+void edit_F_info(F_info **, P_info *);
 void view(F_info *);
-void view_F_info(F_info *);
+void view_flight(F_info *);
 void del_F_info(F_info **, int *);
 void del_F_info_node(F_info **, F_info *);
 void add_P_info(P_info **, int *);
 void add_P_info_node(P_info **, P_info *);
-void edit_P_info(P_info **);
+void edit_P_info(F_info *, P_info **);
 void del_P_info_node(P_info **, P_info *);
 void book_reservation(F_info *, P_info *);
 int flight_conflict(Flight *, F_info *);
