@@ -474,9 +474,8 @@ void edit_P_info(F_info *flights, P_info **passengers)
 						printf("Enter new lastname: ");
 						scanf(" %s", passenger -> lastname);
 
-						P_info *new = P_infocpy(passenger);
-						del_P_info_node(passengers, passenger);
-						add_P_info_node(passengers, new);
+						rm_P_info_node(passengers, passenger);
+						add_P_info_node(passengers, passenger);
 						break;
 					case 2:
 						passenger -> birthdate = get_date("Format: [MM/DD/YYYY]\nEnter new birthdate: ", passenger -> birthdate);

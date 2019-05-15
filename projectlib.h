@@ -409,3 +409,23 @@ void rm_F_info_node(F_info **flights, F_info *to_rm)
 		}
 	}
 }
+
+void rm_P_info_node(P_info **passengers, P_info *to_rm)
+{
+	//	if node to be deleted is head
+	if(*passengers == to_rm)
+	{
+		*passengers = to_rm -> next;
+	}
+	else
+	{
+		for(P_info *passenger = *passengers; passenger; passenger = passenger -> next)
+		{
+			if(passenger -> next == to_rm)
+			{
+				passenger -> next = to_rm -> next;
+				break;
+			}
+		}
+	}
+}

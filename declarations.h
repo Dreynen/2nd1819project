@@ -58,3 +58,4 @@ P_info *P_infocpy(P_info *);
 Flight *found_flight(Flight *, int);
 Passenger *found_passenger(Passenger *, int);
 void rm_F_info_node(F_info **, F_info *);
+void rm_P_info_node(P_info **, P_info *);
