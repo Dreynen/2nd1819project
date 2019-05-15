@@ -65,6 +65,7 @@ int get_int(char *prompt)
 	return i;
 }
 
+//	returns 1 if a string passed has digits for all characters; else returns 0
 int strisdigits(char *s)
 {
     for(int i = 0, len = strlen(s); i < len; i++)
@@ -82,6 +83,7 @@ int strisdigits(char *s)
     return 1;
 }
 
+//	gets month, day, and year from user
 struct tm get_date(char *prompt, struct tm new_tm)
 {
 	char s[11];
@@ -107,14 +109,18 @@ struct tm get_date(char *prompt, struct tm new_tm)
 			count++;
 		}
 
+		if(count != 2)
+			continue;
 	}
 	while(!valid_date(new_tm));
 
 	return new_tm;
 }
 
+//	returns 1 if user input is within proper bounds; else returns 0
 int valid_date(struct tm date)
 {
+	//	minimum year is 1900
 	if(date.tm_year > 0)
 	{
 		switch(date.tm_mon)
@@ -167,6 +173,7 @@ int valid_date(struct tm date)
 	return 1;
 }
 
+//	returns 1 if the date of time0 occurs after time1, returns -1 if the two dates are the same; else returns 0
 int valid_dates(struct tm time0, struct tm time1)
 {
 	if(time0.tm_year > time1.tm_year
@@ -182,6 +189,7 @@ int valid_dates(struct tm time0, struct tm time1)
 	return 0;
 }
 
+//	get hour and minute from user
 struct tm get_time(char *prompt, struct tm new_tm)
 {
 	char s[6];
@@ -206,13 +214,15 @@ struct tm get_time(char *prompt, struct tm new_tm)
 			count++;
 		}
 
-		if(count != 1) continue;
+		if(count != 1)
+			continue;
 	}
 	while((new_tm.tm_hour < 0 || new_tm.tm_hour > 23) || (new_tm.tm_min < 0 || new_tm.tm_min > 59));
 
 	return new_tm;
 }
 
+//	returns 1 if the hour:min of time0 occurs after time1, returns -1 if the two hour:min are the same; else returns 0
 int valid_times(struct tm time0, struct tm time1)
 {
 	if(time0.tm_hour > time1.tm_hour || (time0.tm_hour == time1.tm_hour && time0.tm_min >= time1.tm_min))
@@ -226,6 +236,7 @@ int valid_times(struct tm time0, struct tm time1)
 	return 0;
 }
 
+//	gets strings and stores them into flight
 void get_locations(F_info *flight, char *prompt0, char *prompt1)
 {
 	do
@@ -238,6 +249,7 @@ void get_locations(F_info *flight, char *prompt0, char *prompt1)
 	while(!namecmp(flight -> destination, flight -> origin));
 }
 
+//	gets the departure and arrival dates of a flight
 void get_dates(F_info *flight, char *prompt0, char *prompt1)
 {
 	time_t current_t = time(NULL);
@@ -255,6 +267,7 @@ void get_dates(F_info *flight, char *prompt0, char *prompt1)
 	while(!valid_dates(flight -> departure, current_tm) || !valid_dates(flight -> arrival, flight -> departure));
 }
 
+//	gets the departure and arrival times of a flight
 void get_times(F_info *flight, char *prompt0, char *prompt1)
 {
 	printf("\nFormat: [HH:MM]\n");
@@ -294,6 +307,7 @@ void capitalize(char *s)
 	}
 }
 
+//	returns a F_info pointer if flight with flight_ID is found; else returns NULL
 F_info *found_F_info(F_info *flights, int flight_ID)
 {
 	for(F_info *flight = flights; flight; flight = flight -> next)
@@ -303,8 +317,8 @@ F_info *found_F_info(F_info *flights, int flight_ID)
 	return NULL;
 }
 
-int F_infocmp(F_info *flight0, F_info *flight1)
 //	returns 1 if flight0 occurs after flight1; else return 0
+int F_infocmp(F_info *flight0, F_info *flight1)
 {
 	if(valid_dates(flight0 -> departure, flight1 -> departure) > 0
 		|| (valid_dates(flight0 -> departure, flight1 -> departure) < 0 && valid_times(flight0 -> departure, flight1 -> departure) > 0)
@@ -317,23 +331,7 @@ int F_infocmp(F_info *flight0, F_info *flight1)
 	return 0;
 }
 
-F_info *F_infocpy(F_info *flight)
-{
-	F_info *new = malloc(sizeof(F_info));
-	new -> flight_ID = flight -> flight_ID;
-	strcpy(new -> destination, flight -> destination);
-	strcpy(new -> origin, flight -> origin);
-	new -> departure = flight -> departure;
-	new -> arrival = flight -> arrival;
-	new -> passenger_count = flight -> passenger_count;
-	new -> max_passengers = flight -> max_passengers;
-	new -> bonus_miles = flight -> bonus_miles;
-	new -> passengers = flight -> passengers;
-	new -> next = NULL;
-
-	return new;
-}
-
+//	returns a P_info pointer if passenger with passport_num is found; else returns NULL
 P_info *found_P_info(P_info *passengers, int passport_num)
 {
 	for(P_info *passenger = passengers; passenger; passenger = passenger -> next)
@@ -343,6 +341,7 @@ P_info *found_P_info(P_info *passengers, int passport_num)
 	return NULL;
 }
 
+//	gets two strings and stores them into passenger
 void get_names(P_info *passenger, char *prompt0, char *prompt1)
 {
 	printf("%s", prompt0);
@@ -351,21 +350,7 @@ void get_names(P_info *passenger, char *prompt0, char *prompt1)
 	scanf(" %[^\n]", passenger -> lastname);
 }
 
-P_info *P_infocpy(P_info *passenger)
-{
-	P_info *new = malloc(sizeof(P_info));
-	strcpy(new -> firstname, passenger -> firstname);
-	strcpy(new -> lastname, passenger -> lastname);
-	new -> birthdate = passenger -> birthdate;
-	new -> passport_num = passenger -> passport_num;
-	new -> miles = passenger -> miles;
-	new -> flight_count = passenger -> flight_count;
-	new -> flights = passenger -> flights;
-	new -> next = NULL;
-
-	return new;
-}
-
+//	returns flight pointer if flight with flight_ID is found from a flight list; else returns NULL
 Flight *found_flight(Flight *flights, int flight_ID)
 {
 	for(Flight *flight = flights; flight; flight = flight -> next)
@@ -379,6 +364,7 @@ Flight *found_flight(Flight *flights, int flight_ID)
 	return NULL;
 }
 
+//	returns a passenger pointer if passenger with passport_num is found from a passenger list; else returns NULL
 Passenger *found_passenger(Passenger *passengers, int passport_num)
 {
 	for(Passenger *passenger = passengers; passenger; passenger = passenger -> next)
@@ -391,6 +377,7 @@ Passenger *found_passenger(Passenger *passengers, int passport_num)
 	return NULL;
 }
 
+//	disconnects a node from list without freeing it; preparation for reinsertion
 void rm_F_info_node(F_info **flights, F_info *to_rm)
 {
 	if(*flights == to_rm)
@@ -410,6 +397,8 @@ void rm_F_info_node(F_info **flights, F_info *to_rm)
 	}
 }
 
+
+//	disconnects a node from list without freeing it; preparation for reinsertion
 void rm_P_info_node(P_info **passengers, P_info *to_rm)
 {
 	//	if node to be deleted is head

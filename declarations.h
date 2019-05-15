@@ -54,7 +54,6 @@ F_info *found_F_info(F_info *, int);
 int F_infocmp(F_info *, F_info *);
 P_info *found_P_info(P_info *, int);
 void get_names(P_info *, char *, char *);
-P_info *P_infocpy(P_info *);
 Flight *found_flight(Flight *, int);
 Passenger *found_passenger(Passenger *, int);
 void rm_F_info_node(F_info **, F_info *);
