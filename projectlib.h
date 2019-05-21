@@ -94,7 +94,7 @@ struct tm get_date(char *prompt, struct tm new_tm)
 		printf("%s", prompt);
 		scanf("%10s", s);
 		count = 0;
-		for(char *temp = strtok(s, "/"); count <= 2; temp = strtok(NULL, "/"))
+		for(char *temp = strtok(s, "/"); temp; temp = strtok(NULL, "/"))
 		{
 			if(strisdigits(temp))
 			{
@@ -109,7 +109,7 @@ struct tm get_date(char *prompt, struct tm new_tm)
 			count++;
 		}
 
-		if(count != 2)
+		if(count != 3)
 			continue;
 	}
 	while(!valid_date(new_tm));
@@ -200,7 +200,7 @@ struct tm get_time(char *prompt, struct tm new_tm)
 		printf("%s", prompt);
 		scanf("%5s", s);
 		count = 0;
-		for(char *temp = strtok(s, ":"); count <= 1; temp = strtok(NULL, ":"))
+		for(char *temp = strtok(s, ":"); temp; temp = strtok(NULL, ":"))
 		{
 			if(strisdigits(temp))
 			{
@@ -213,13 +213,19 @@ struct tm get_time(char *prompt, struct tm new_tm)
 			}
 			count++;
 		}
-
-		if(count != 1)
-			continue;
 	}
-	while((new_tm.tm_hour < 0 || new_tm.tm_hour > 23) || (new_tm.tm_min < 0 || new_tm.tm_min > 59));
+	while(!valid_time(new_tm));
 
 	return new_tm;
+}
+
+int valid_time(struct tm new_tm)
+{
+	if((new_tm.tm_hour >= 0 || new_tm.tm_hour < 24) || (new_tm.tm_min >= 0 || new_tm.tm_min < 60))
+	{
+		return 1;
+	}
+	return 0;
 }
 
 //	returns 1 if the hour:min of time0 occurs after time1, returns -1 if the two hour:min are the same; else returns 0
@@ -236,7 +242,7 @@ int valid_times(struct tm time0, struct tm time1)
 	return 0;
 }
 
-//	gets strings and stores them into flight
+//	gets strings and stores them into flight; reprompts if destination and origin are the same
 void get_locations(F_info *flight, char *prompt0, char *prompt1)
 {
 	do
@@ -258,21 +264,21 @@ void get_dates(F_info *flight, char *prompt0, char *prompt1)
 	//	normalize current_tm
 	mktime(&current_tm);
 
-	printf("\nFormat: [MM/DD/YYYY]\n");
 	do
 	{
+		printf("\nFormat: [MM/DD/YYYY]\n");
 		flight -> departure = get_date(prompt0, flight -> departure);
 		flight -> arrival = get_date(prompt1, flight -> arrival);
 	}
 	while(!valid_dates(flight -> departure, current_tm) || !valid_dates(flight -> arrival, flight -> departure));
 }
 
-//	gets the departure and arrival times of a flight
+//	gets the departure and arrival times of a flight; reprompts if departure occurs after arrival
 void get_times(F_info *flight, char *prompt0, char *prompt1)
 {
-	printf("\nFormat: [HH:MM]\n");
 	do
 	{
+		printf("\nFormat: [HH:MM]\n");
 		flight -> departure = get_time(prompt0, flight -> departure);
 		flight -> arrival = get_time(prompt1, flight -> arrival);
 
@@ -307,7 +313,7 @@ void capitalize(char *s)
 	}
 }
 
-//	returns a F_info pointer if flight with flight_ID is found; else returns NULL
+//	returns a F_info pointer if a flight with flight_ID is found; else returns NULL
 F_info *found_F_info(F_info *flights, int flight_ID)
 {
 	for(F_info *flight = flights; flight; flight = flight -> next)
@@ -331,7 +337,7 @@ int F_infocmp(F_info *flight0, F_info *flight1)
 	return 0;
 }
 
-//	returns a P_info pointer if passenger with passport_num is found; else returns NULL
+//	returns a P_info pointer if a passenger with passport_num is found; else returns NULL
 P_info *found_P_info(P_info *passengers, int passport_num)
 {
 	for(P_info *passenger = passengers; passenger; passenger = passenger -> next)
@@ -350,7 +356,7 @@ void get_names(P_info *passenger, char *prompt0, char *prompt1)
 	scanf(" %[^\n]", passenger -> lastname);
 }
 
-//	returns flight pointer if flight with flight_ID is found from a flight list; else returns NULL
+//	returns flight pointer if a flight with flight_ID is found from a flight list; else returns NULL
 Flight *found_flight(Flight *flights, int flight_ID)
 {
 	for(Flight *flight = flights; flight; flight = flight -> next)

@@ -44,6 +44,7 @@ struct tm get_date(char *, struct tm);
 int valid_date(struct tm);
 int valid_dates(struct tm, struct tm);
 struct tm get_time(char *, struct tm);
+int valid_time(struct tm);
 int valid_times(struct tm, struct tm);
 void get_locations(F_info *, char *, char *);
 void get_dates(F_info *, char *, char *);

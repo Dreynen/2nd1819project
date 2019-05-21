@@ -166,10 +166,10 @@ void edit_F_info(F_info **flights, P_info *passengers)
 				{
 					case 1:
 						flight -> max_passengers = get_int("Enter new maximum value: ");
-						conflict = -2;
 						break;
 					case 2:
 						get_dates(flight, "Enter new departure date: ", "Enter new arrival date:   ");
+						//	check if flight arrival is after departure; else conflict = 1
 						if(valid_dates(flight -> arrival, flight -> departure) < 0 && !valid_times(flight -> arrival, flight -> departure))
 						{
 							conflict = -1;
@@ -180,6 +180,7 @@ void edit_F_info(F_info **flights, P_info *passengers)
 						break;
 				}
 
+				//	if dates are valid, check for conflict with passenger flights
 				if(conflict == 0)
 				{
 					for(P_info *passenger = passengers; passenger; passenger = passenger -> next)
@@ -205,7 +206,7 @@ void edit_F_info(F_info **flights, P_info *passengers)
 					//	revert edit
 					flight -> departure = old_dep;
 					flight -> arrival = old_arr;
-					if(conflict > 0)
+					if(conflict == 1)
 					{
 						printf("\nError: A passenger reservation has a conflict with the new schedule.\n");
 					}
@@ -245,6 +246,7 @@ void view(F_info *flights)
 		int choice = get_int("Choice: ");
 		switch(choice)
 		{
+			//	asks for specific flight and prints flight
 			case 1:
 			{
 				int flight_ID = get_int("Enter flight ID: ");
@@ -259,8 +261,8 @@ void view(F_info *flights)
 				}
 				break;
 			}
-			case 2:
 			// prints all flights that can still accomodate passengers
+			case 2:
 			{
 				for(F_info *flight = flights; flight; flight = flight -> next)
 				{
@@ -271,8 +273,8 @@ void view(F_info *flights)
 				}
 				break;
 			}
-			case 3:
 			// prints all flights that are fully booked
+			case 3:
 			{
 				for(F_info *flight = flights; flight; flight = flight -> next)
 				{
@@ -283,8 +285,8 @@ void view(F_info *flights)
 				}
 				break;
 			}
-			case 4:
 			// prints all flights
+			case 4:
 			{
 				for(F_info *flight = flights; flight; flight = flight -> next)
 				{
@@ -329,7 +331,8 @@ void del_F_info(F_info **flights, int *flight_count)
 		{
 			if(!(flight -> passengers))
 			{
-				printf("Confirm [Y/N]: ");
+				view_flight(flight);
+				printf("\nConfirm Delete[Y/N]: ");
 				char choice; scanf(" %c", &choice);
 
 				if(choice == 'Y' || choice == 'y')
@@ -473,6 +476,7 @@ void edit_P_info(F_info *flights, P_info **passengers)
 				switch(choice)
 				{
 					case 1:
+					{
 						printf("Enter new lastname: ");
 						scanf(" %s", passenger -> lastname);
 
@@ -481,9 +485,27 @@ void edit_P_info(F_info *flights, P_info **passengers)
 						//	reinsert node to list
 						add_P_info_node(passengers, passenger);
 						break;
+					}
+
 					case 2:
+					{
+						struct tm old_date = passenger -> birthdate;
+
+						time_t current_t = time(NULL);
+						struct tm current_tm = *(gmtime(&current_t));
+						current_tm.tm_hour+=8;
+						//	normalize current_tm
+						mktime(&current_tm);
+
 						passenger -> birthdate = get_date("Format: [MM/DD/YYYY]\nEnter new birthdate: ", passenger -> birthdate);
+						//	if new birthday is after current date
+						if(valid_dates(passenger -> birthdate, current_tm))
+						{
+							passenger -> birthdate = old_date;
+							printf("\nError: New birthdate is invalid.\n");
+						}
 						break;
+					}
 				}
 
 				printf("\nPassenger edited successfully.\n");
@@ -514,6 +536,7 @@ void del_P_info_node(P_info **passengers, P_info *to_delete)
 	}
 	else
 	{
+		//	get node before node to be deleted
 		for(P_info *passenger = *passengers; passenger; passenger = passenger -> next)
 		{
 			if(passenger -> next == to_delete)
@@ -606,7 +629,8 @@ int flight_conflict(Flight *flights, F_info *to_book)
 {
 	for(Flight *flight = flights; flight; flight = flight -> next)
 	{
-		if(flight -> info == to_book
+		//	if flight is the same as to_book
+		if(flight -> info -> flight_ID == to_book -> flight_ID
 			//	if flight in list departs after arrival of to_book
 			|| (valid_dates(flight -> info -> departure, to_book -> arrival) > 0
 				|| (valid_dates(flight -> info -> departure, to_book -> arrival) < 0 && valid_times(flight -> info -> departure, to_book -> arrival) > 0))
@@ -715,9 +739,10 @@ void rm_reservation(F_info *flights, P_info *passengers)
 						if(flight -> passengers)
 						{
 							Passenger *to_delete_p = found_passenger(flight -> passengers, passport_num);
-							if(passenger)
+							if(to_delete_p)
 							{
-								printf("Confirm [Y/N]: ");
+								view_flight(flight);
+								printf("\nConfirm Delete[Y/N]: ");
 								char choice; scanf(" %c", &choice);
 
 								if(choice == 'Y' || choice == 'y')
